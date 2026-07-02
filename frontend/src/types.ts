@@ -25,5 +25,6 @@ export interface Hypothesis {
   title: string;
   status: HypothesisStatus;
   reason: string | null;
+  created_at: string;
 }
 

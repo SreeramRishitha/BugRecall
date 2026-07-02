@@ -57,6 +57,7 @@ class HypothesisOut(BaseModel):
     title: str
     status: str
     reason: Optional[str]
+    created_at: datetime
 
     class Config:
         from_attributes = True
