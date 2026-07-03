@@ -20,6 +20,7 @@ export default function BugSessionPage() {
   const [hypInput, setHypInput] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatLog, setChatLog] = useState<{ role: "user" | "ai"; text: string }[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const load = () => {
     api.getSession(sessionId).then(setSession);
@@ -50,18 +51,25 @@ export default function BugSessionPage() {
     load();
   };
 
-  const sendChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    setChatLog((log) => [...log, { role: "user", text: chatInput }]);
-    setChatInput("");
-    setTimeout(() => {
-      setChatLog((log) => [
-        ...log,
-        { role: "ai", text: "Recall engine not wired up yet — this will query Cognee + Claude once /chat exists." },
-      ]);
-    }, 400);
-  };
+const sendChat = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!chatInput.trim() || chatLoading) return;
+  const question = chatInput;
+  setChatLog((log) => [...log, { role: "user", text: question }]);
+  setChatInput("");
+  setChatLoading(true);
+  try {
+    const res = await api.askBugRecall(sessionId, question);
+    setChatLog((log) => [...log, { role: "ai", text: res.answer }]);
+  } catch (err) {
+    setChatLog((log) => [
+      ...log,
+      { role: "ai", text: `Error reaching the recall engine: ${err instanceof Error ? err.message : "unknown error"}` },
+    ]);
+  } finally {
+    setChatLoading(false);
+  }
+};
 
   if (!session) {
     return <div style={{ padding: 48, color: "var(--text-muted)" }}>Loading case file…</div>;
@@ -214,8 +222,8 @@ export default function BugSessionPage() {
                 placeholder="What should I check next?"
                 style={{ ...inputStyle, flex: 1, fontSize: 12.5 }}
               />
-              <button type="submit" style={smallBtnStyle}>
-                →
+              <button type="submit" style={smallBtnStyle} disabled={chatLoading}>
+              {chatLoading ? "…" : "→"}
               </button>
             </form>
           </div>

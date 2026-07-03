@@ -10,7 +10,7 @@ Every bug gets a **Bug Session** — a persistent case file that stores:
 - Hypotheses (theories, marked Untested / Confirmed / Ruled Out)
 - A timeline of the investigation
 
-That memory is pushed into a knowledge graph via **Cognee**, so an AI assistant (**Claude**) can be asked "what should I check next?" and answer grounded in everything already tried for that specific bug — instead of repeating suggestions that have already failed.
+That memory is pushed into a knowledge graph via **Cognee**, so an AI assistant (**Gemini**) can be asked "what should I check next?" and answer grounded in everything already tried for that specific bug — instead of repeating suggestions that have already failed.
 
 ## Tech Stack
 
@@ -20,22 +20,22 @@ That memory is pushed into a knowledge graph via **Cognee**, so an AI assistant 
 | Backend | FastAPI (Python, async) |
 | Database | SQLite (via SQLAlchemy) |
 | Memory layer | [Cognee](https://www.cognee.ai/) — knowledge graph over evidence/hypotheses |
-| AI reasoning | Claude API (Anthropic) |
+| AI reasoning | Google Gemini API (`gemini-2.5-flash`) |
+| Embeddings | Gemini (`gemini-embedding-001`) |
 
 ## Features
 
 ### ✅ Working
 
 - **Bug Session management** — create, view, and list debugging sessions (title, project, description, status)
-- **Evidence logging** — attach logs/notes/snippets to a session
-- **Hypothesis tracking** — log theories and mark them Confirmed / Ruled Out
+- **Evidence logging** — attach logs/notes/snippets to a session; automatically ingested into memory
+- **Hypothesis tracking** — log theories, mark them Confirmed / Ruled Out; status changes are also fed into memory
 - **Investigation Timeline** — chronological view of evidence + hypotheses for a session
-- **Chat UI** — "Ask BugRecall" panel wired to the backend `/sessions/{id}/ask` endpoint
+- **AI Recall Chat** — "Ask BugRecall" panel, fully working end-to-end: evidence/hypotheses are pushed into a Cognee knowledge graph per session, queried on each question, and answered by Gemini with a grounded, memory-aware recommendation (verified to correctly reference prior evidence and avoid re-suggesting ruled-out hypotheses)
 
 ### 🚧 In progress
 
-- **AI Recall Engine** — Cognee ingestion + Claude-powered answers are wired end-to-end, but memory `search()` calls are currently failing on a Cognee internal SQLite path issue (see Known Issues below). Ingestion (`add`/`cognify`) has not yet been verified working.
-- **Resume Previous Session** — auto-summary endpoint (`/sessions/{id}/summary`) exists but is blocked by the same issue as above.
+- **Resume Previous Session** — `GET /sessions/{id}/summary` endpoint exists and uses the same working pipeline as chat, but hasn't been tested/wired into the frontend yet as a "welcome back" banner
 
 ### ⬜ Not started
 
@@ -51,9 +51,10 @@ backend/
     models/        # SQLAlchemy models
     schemas/        # Pydantic request/response schemas
     memory/         # Cognee ingestion + recall
-    ai/             # Claude API wrapper
+    ai/             # Gemini API wrapper
     database.py
     main.py
+  test_cognee.py    # standalone script for testing Cognee outside FastAPI
 frontend/
   src/
     pages/          # Dashboard, BugSessionPage
@@ -76,8 +77,16 @@ pip install -r requirements.txt
 Create `backend/.env`:
 
 ```
-ANTHROPIC_API_KEY=your-key-here
+GEMINI_API_KEY=your-gemini-key-here
+LLM_API_KEY=your-gemini-key-here
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini/gemini-2.5-flash
+EMBEDDING_PROVIDER=gemini
+EMBEDDING_API_KEY=your-gemini-key-here
+EMBEDDING_MODEL=gemini/gemini-embedding-001
 ```
+
+Get a free Gemini API key at [aistudio.google.com](https://aistudio.google.com) — no card required.
 
 Run:
 
@@ -97,22 +106,28 @@ npm run dev
 
 App available at `http://localhost:5173`.
 
-## Known Issues
+## Verifying the AI Recall engine
 
-- `POST /sessions/{id}/ask` currently returns a `500` with:
-  ```
-  sqlite3.OperationalError: unable to open database file
-  ```
-  This happens inside Cognee's own internal user/auth database lookup (`get_default_user`), not the app's own SQLite DB. Likely cause: Cognee's system data directory doesn't exist yet, or the process doesn't have write permission to it. Needs investigation before the AI chat and resume-summary features will work end-to-end.
+1. Log a piece of evidence and a hypothesis on a session (via the UI or `/docs`)
+2. Ask a question in "Ask BugRecall" (or `POST /sessions/{id}/ask`)
+3. The answer should reference the specific evidence/hypotheses just logged, not generic advice — this confirms Cognee ingestion and Gemini reasoning are both wired correctly
+
+To debug the memory layer in isolation from FastAPI, run `python test_cognee.py` from `backend/`.
+
+## Notes on Cognee configuration
+
+- Cognee reads `LLM_PROVIDER` / `LLM_API_KEY` / `LLM_MODEL` / `EMBEDDING_*` directly from environment variables — calling `cognee.config.set_llm_config(...)` in code was found to be unreliable and is not used
+- Cognee's system/data storage is pointed at `backend/.cognee_system/` and `backend/.cognee_data/` (set in `app/memory/__init__.py`) rather than its default location inside `.venv/site-packages`, which was unreliable to write to on this setup
+- Both directories are gitignored, along with `.env`
 
 ## Roadmap
 
 Based on the original 3-day plan:
 
 - [x] Bug Session / Evidence / Hypothesis CRUD (backend + frontend)
-- [x] Chat UI shell wired to a real endpoint
-- [ ] Fix Cognee memory ingestion/search (blocking)
-- [ ] AI Next Best Step recommendations
-- [ ] Session Resume auto-summary
+- [x] Chat UI wired to a real endpoint
+- [x] Cognee memory ingestion/search working
+- [x] AI Next Best Step recommendations (grounded, memory-aware)
+- [ ] Session Resume auto-summary (backend done, frontend pending)
 - [ ] Similar Bug Search
 - [ ] Polish + demo prep

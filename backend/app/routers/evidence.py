@@ -1,3 +1,4 @@
+from app.memory import ingest_text
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -7,7 +8,7 @@ router = APIRouter(prefix="/evidence", tags=["Evidence"])
 
 
 @router.post("/", response_model=schemas.EvidenceOut)
-def create_evidence(evidence: schemas.EvidenceCreate, db: Session = Depends(get_db)):
+async def create_evidence(evidence: schemas.EvidenceCreate, db: Session = Depends(get_db)):
     session = db.query(models.BugSession).filter(models.BugSession.id == evidence.session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -15,6 +16,8 @@ def create_evidence(evidence: schemas.EvidenceCreate, db: Session = Depends(get_
     db.add(db_evidence)
     db.commit()
     db.refresh(db_evidence)
+    await ingest_text(evidence.session_id, f"[{evidence.type}] {evidence.content}")
+
     return db_evidence
 
 

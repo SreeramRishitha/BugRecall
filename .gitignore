@@ -1,1 +1,3 @@
 backend/.env
+backend/.cognee_system/
+backend/.cognee_data/

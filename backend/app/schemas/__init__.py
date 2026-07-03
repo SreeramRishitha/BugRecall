@@ -61,3 +61,12 @@ class HypothesisOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---- Chat / Recall ----          <-- NEW, add this whole block at the bottom
+class ChatRequest(BaseModel):
+    question: str
+
+
+class ChatResponse(BaseModel):
+    answer: str

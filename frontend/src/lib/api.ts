@@ -32,4 +32,11 @@ export const api = {
     request<Hypothesis>("/hypothesis/", { method: "POST", body: JSON.stringify(data) }),
   updateHypothesis: (id: number, data: { status: string; reason?: string }) =>
     request<Hypothesis>(`/hypothesis/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+
+  // 👇 NEW — paste this block here
+  askBugRecall: (sessionId: number, question: string) =>
+    request<{ answer: string }>(`/sessions/${sessionId}/ask`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
 };
