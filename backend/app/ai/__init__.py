@@ -8,7 +8,7 @@ import httpx
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.5-flash:generateContent"
+    "gemini-2.5-flash-lite:generateContent"
 )
 
 SYSTEM_PROMPT = """You are BugRecall, an AI debugging assistant with a persistent
@@ -46,3 +46,52 @@ Developer's question:
         resp.raise_for_status()
         data = resp.json()
         return data["candidates"][0]["content"]["parts"][0]["text"]
+import json
+
+SIMILAR_BUGS_PROMPT = """You are BugRecall, comparing a current bug investigation against
+a developer's past solved/investigated bugs to find genuinely similar ones.
+
+Only include a past bug if it is meaningfully similar (same root cause area, same kind of
+symptom, or a hypothesis/fix that would likely transfer) — not just superficially related.
+If nothing is meaningfully similar, return an empty list.
+
+Respond with ONLY valid JSON, no markdown, no commentary, in exactly this shape:
+{"matches": [{"session_id": <int>, "reason": "<one short sentence, reference specific evidence>"}]}
+"""
+
+
+async def find_similar_bugs(current_summary: str, candidates: list[dict]) -> list[dict]:
+    """candidates: list of {id, title, project, summary} for other sessions."""
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY is not set")
+    if not candidates:
+        return []
+
+    candidates_text = "\n\n".join(
+        f"Session #{c['id']} — {c['title']} ({c['project']}):\n{c['summary']}"
+        for c in candidates
+    )
+    prompt = f"""Current bug:
+{current_summary}
+
+Past sessions to compare against:
+{candidates_text}"""
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+            headers={"content-type": "application/json"},
+            json={
+                "system_instruction": {"parts": [{"text": SIMILAR_BUGS_PROMPT}]},
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"response_mime_type": "application/json"},
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data["candidates"][0]["content"]["parts"][0]["text"]
+        try:
+            parsed = json.loads(text)
+            return parsed.get("matches", [])
+        except json.JSONDecodeError:
+            return []

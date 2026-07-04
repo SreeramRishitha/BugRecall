@@ -39,4 +39,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ question }),
     }),
+getSessionSummary: (sessionId: number) =>
+      request<{ answer: string }>(`/sessions/${sessionId}/summary`),
+    getSimilarBugs: (sessionId: number) =>
+      request<{ matches: { session_id: number; title: string; project: string; reason: string }[] }>(
+        `/sessions/${sessionId}/similar`
+      ),
 };

@@ -8,6 +8,8 @@ import HypothesisCard from "../components/HypothesisCard";
 import Sidebar from "../components/Sidebar";
 import SessionHeader from "../components/SessionHeader";
 import Timeline from "../components/Timeline";
+import ResumeBanner from "../components/ResumeBanner";
+import SimilarBugs from "../components/SimilarBugs";
 
 type TimelineItem =
   | { kind: "evidence"; data: Evidence; at: string }
@@ -27,6 +29,11 @@ export default function BugSessionPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatLog, setChatLog] = useState<{ role: "user" | "ai"; text: string }[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+const [summaryLoading, setSummaryLoading] = useState(false);
+const [summaryDismissed, setSummaryDismissed] = useState(false);
+const [similarMatches, setSimilarMatches] = useState<{ session_id: number; title: string; project: string; reason: string }[]>([]);
+const [similarLoading, setSimilarLoading] = useState(false);
 
   const load = () => {
     api.getSession(sessionId).then(setSession);
@@ -38,6 +45,24 @@ export default function BugSessionPage() {
   };
 
   useEffect(load, [sessionId]);
+  useEffect(() => {
+  setSummary(null);
+  setSummaryDismissed(false);
+  setSummaryLoading(true);
+  api
+    .getSessionSummary(sessionId)
+    .then((res) => setSummary(res.answer))
+    .catch(() => setSummary(null))
+    .finally(() => setSummaryLoading(false));
+}, [sessionId]);
+useEffect(() => {
+  setSimilarLoading(true);
+  api
+    .getSimilarBugs(sessionId)
+    .then((res) => setSimilarMatches(res.matches))
+    .catch(() => setSimilarMatches([]))
+    .finally(() => setSimilarLoading(false));
+}, [sessionId]);
 
   const addEvidence = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +120,15 @@ const sendChat = async (e: React.FormEvent) => {
     <div style={{ maxWidth:1700,
 width:"100%", margin: "0 auto",padding: "32px" }}>
       <SessionHeader session={session} />
+
+      {!summaryDismissed && (
+        <ResumeBanner
+          loading={summaryLoading}
+          summary={summary}
+          onDismiss={() => setSummaryDismissed(true)}
+        />
+      )}
+
 
 <div
   style={{
@@ -158,7 +192,7 @@ width:"100%", margin: "0 auto",padding: "32px" }}>
                 </div>
               ))}
             </div>
-            <form onSubmit={sendChat} style={{ borderTop: "1px solid var(--border)", padding: 10, display: "flex", gap: 6 }}>
+<form onSubmit={sendChat} style={{ borderTop: "1px solid var(--border)", padding: 10, display: "flex", gap: 6 }}>
               <input
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
@@ -170,10 +204,10 @@ width:"100%", margin: "0 auto",padding: "32px" }}>
               </button>
             </form>
           </div>
+          <SimilarBugs matches={similarMatches} loading={similarLoading} />
         </div>
       </div>
       </div>
-    
   );
 }
 

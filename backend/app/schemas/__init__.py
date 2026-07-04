@@ -70,3 +70,13 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
+# ---- Similar Bugs ----
+class SimilarBug(BaseModel):
+    session_id: int
+    title: str
+    project: str
+    reason: str
+
+
+class SimilarBugsResponse(BaseModel):
+    matches: list[SimilarBug]
