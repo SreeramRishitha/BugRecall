@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import type { BugSession, Evidence, Hypothesis } from "../types";
-import StatusPill from "../components/StatusPill";
+
+import EvidenceCard from "../components/EvidenceCard";
+import HypothesisCard from "../components/HypothesisCard";
+import Sidebar from "../components/Sidebar";
+import SessionHeader from "../components/SessionHeader";
+import Timeline from "../components/Timeline";
 
 type TimelineItem =
   | { kind: "evidence"; data: Evidence; at: string }
@@ -13,6 +18,7 @@ export default function BugSessionPage() {
   const sessionId = Number(id);
 
   const [session, setSession] = useState<BugSession | null>(null);
+  const [allSessions, setAllSessions] = useState<BugSession[]>([]);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
 
@@ -26,6 +32,9 @@ export default function BugSessionPage() {
     api.getSession(sessionId).then(setSession);
     api.listEvidence(sessionId).then(setEvidence);
     api.listHypotheses(sessionId).then(setHypotheses);
+
+    api.listSessions().then(setAllSessions);
+
   };
 
   useEffect(load, [sessionId]);
@@ -43,11 +52,6 @@ export default function BugSessionPage() {
     if (!hypInput.trim()) return;
     await api.createHypothesis({ session_id: sessionId, title: hypInput });
     setHypInput("");
-    load();
-  };
-
-  const markHypothesis = async (hypId: number, status: string) => {
-    await api.updateHypothesis(hypId, { status });
     load();
   };
 
@@ -76,111 +80,50 @@ const sendChat = async (e: React.FormEvent) => {
   }
 
   const timeline: TimelineItem[] = [
-    ...evidence.map((e): TimelineItem => ({ kind: "evidence", data: e, at: e.created_at })),
-    ...hypotheses.map((h): TimelineItem => ({ kind: "hypothesis", data: h, at: h.created_at ?? "" })),
-  ].sort((a, b) => (a.at < b.at ? -1 : 1));
+  ...evidence.map((e): TimelineItem => ({
+    kind: "evidence",
+    data: e,
+    at: e.created_at,
+  })),
 
+  ...hypotheses.map((h): TimelineItem => ({
+  kind: "hypothesis",
+  data: h,
+  at: h.created_at,
+})),].sort((a, b) => a.at.localeCompare(b.at));
   return (
-    <div style={{ maxWidth: 880, margin: "0 auto", padding: "40px 32px" }}>
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-faint)" }}>
-            {session.project} · #{session.id}
-          </span>
-          <StatusPill status={session.status} />
-        </div>
-        <h1 style={{ fontSize: 26, fontWeight: 600, margin: "0 0 8px", letterSpacing: -0.4 }}>
-          {session.title}
-        </h1>
-        {session.description && (
-          <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6, maxWidth: 640 }}>
-            {session.description}
-          </p>
-        )}
-      </div>
+    <div style={{ maxWidth:1700,
+width:"100%", margin: "0 auto",padding: "32px" }}>
+      <SessionHeader session={session} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 32 }}>
-        <div>
-          <SectionLabel>Investigation timeline</SectionLabel>
+<div
+  style={{
+    display: "grid",
+   gridTemplateColumns: "280px minmax(650px,1fr) 360px",
+    gap: 40,
+    alignItems: "start",
+  }}
+><Sidebar sessions={allSessions} />
 
-          <div style={{ position: "relative", paddingLeft: 20, marginTop: 16 }}>
-            {timeline.length > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 5,
-                  top: 6,
-                  bottom: 6,
-                  width: 1,
-                  background: "var(--border-strong)",
-                }}
-              />
-            )}
-            {timeline.length === 0 && (
-              <div style={{ color: "var(--text-faint)", fontSize: 13, paddingLeft: 4 }}>
-                No evidence or hypotheses logged yet.
-              </div>
-            )}
-            {timeline.map((item, i) => (
-              <TimelineRow key={i} item={item} />
-            ))}
-          </div>
+        <Timeline
+  timeline={timeline}
+  
 
-          <form onSubmit={addEvidence} style={{ marginTop: 24, display: "flex", gap: 8 }}>
-            <input
-              value={evidenceInput}
-              onChange={(e) => setEvidenceInput(e.target.value)}
-              placeholder="Log a log line, note, or snippet…"
-              style={{ ...inputStyle, flex: 1, fontFamily: "var(--font-mono)" }}
-            />
-            <button type="submit" style={smallBtnStyle}>
-              Add evidence
-            </button>
-          </form>
+  evidenceInput={evidenceInput}
+  setEvidenceInput={setEvidenceInput}
 
-          <form onSubmit={addHypothesis} style={{ marginTop: 10, display: "flex", gap: 8 }}>
-            <input
-              value={hypInput}
-              onChange={(e) => setHypInput(e.target.value)}
-              placeholder="Log a hypothesis…"
-              style={{ ...inputStyle, flex: 1 }}
-            />
-            <button type="submit" style={{ ...smallBtnStyle, background: "var(--amber)", color: "#241800" }}>
-              Add hypothesis
-            </button>
-          </form>
+  hypInput={hypInput}
+  setHypInput={setHypInput}
 
-          {hypotheses.length > 0 && (
-            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-              {hypotheses.map((h) => (
-                <div
-                  key={h.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius-sm)",
-                    padding: "10px 12px",
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>{h.title}</span>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <StatusPill status={h.status} />
-                    <button onClick={() => markHypothesis(h.id, "CONFIRMED")} style={tagBtnStyle}>
-                      ✓
-                    </button>
-                    <button onClick={() => markHypothesis(h.id, "RULED_OUT")} style={tagBtnStyle}>
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+  addEvidence={addEvidence}
+  addHypothesis={addHypothesis}
 
+  TimelineRow={TimelineRow}
+  SectionLabel={SectionLabel}
+
+  inputStyle={inputStyle}
+  smallBtnStyle={smallBtnStyle}
+/>
         <div>
           <SectionLabel>Ask BugRecall</SectionLabel>
           <div
@@ -191,7 +134,7 @@ const sendChat = async (e: React.FormEvent) => {
               background: "var(--surface)",
               display: "flex",
               flexDirection: "column",
-              height: 420,
+              height:"calc(100vh - 220px)"
             }}
           >
             <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -229,7 +172,8 @@ const sendChat = async (e: React.FormEvent) => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    
   );
 }
 
@@ -268,23 +212,17 @@ function TimelineRow({ item }: { item: TimelineItem }) {
       <div style={{ fontSize: 10, color: "var(--text-faint)", marginBottom: 3, fontFamily: "var(--font-mono)" }}>
         {isEvidence ? "EVIDENCE" : "HYPOTHESIS"}
       </div>
-      <div
-        style={{
-          fontSize: 13,
-          fontFamily: isEvidence ? "var(--font-mono)" : "var(--font-ui)",
-          color: "var(--text)",
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-sm)",
-          padding: "8px 10px",
-        }}
-      >
-        {isEvidence ? (item.data as Evidence).content : (item.data as Hypothesis).title}
-      </div>
-    </div>
-  );
-}
 
+  {isEvidence ? (
+    <EvidenceCard evidence={item.data as Evidence} />
+  ) : (
+    <HypothesisCard hypothesis={item.data as Hypothesis} />
+  )}
+</div>
+
+
+);
+}
 const inputStyle: React.CSSProperties = {
   background: "var(--bg)",
   border: "1px solid var(--border-strong)",
@@ -306,13 +244,3 @@ const smallBtnStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const tagBtnStyle: React.CSSProperties = {
-  background: "var(--bg)",
-  border: "1px solid var(--border-strong)",
-  borderRadius: 4,
-  color: "var(--text-muted)",
-  fontSize: 11,
-  width: 22,
-  height: 22,
-  cursor: "pointer",
-};

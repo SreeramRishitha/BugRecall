@@ -1,0 +1,85 @@
+.sidebar {
+
+    width:280px;
+
+    background:#10151D;
+
+    border-right:1px solid #2B3240;
+
+    padding:20px;
+
+    box-sizing:border-box;
+
+    display:flex;
+
+    flex-direction:column;
+
+    position:sticky;
+
+    top:24px;
+
+    align-self:start;
+
+    max-height:calc(100vh - 48px);
+
+}
+.sidebar-header{
+
+    margin-bottom:20px;
+
+}
+
+.sidebar-header h3{
+
+    color:white;
+
+    margin:0;
+
+}
+
+.new-session-btn{
+
+    width:100%;
+
+    background:#2563EB;
+
+    color:white;
+
+    border:none;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    margin-bottom:20px;
+
+    font-weight:600;
+
+}
+
+.new-session-btn:hover{
+
+    background:#1D4ED8;
+
+}
+.sidebar-list{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    margin-top:16px;
+
+}
+
+.empty-sidebar{
+
+    color:#94A3B8;
+
+    text-align:center;
+
+    margin-top:30px;
+
+}

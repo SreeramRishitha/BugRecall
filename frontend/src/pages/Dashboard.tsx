@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import type { BugSession } from "../types";
 import StatusPill from "../components/StatusPill";
-
+import Header from "../components/Header";
+import SessionCard from "../components/SessionCard";
 export default function Dashboard() {
   const [sessions, setSessions] = useState<BugSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,32 +41,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ maxWidth: 880, margin: "0 auto", padding: "48px 32px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-faint)", marginBottom: 6 }}>
-            {sessions.length} case{sessions.length === 1 ? "" : "s"} on file
-          </div>
-          <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0, letterSpacing: -0.5 }}>
-            Bug sessions
-          </h1>
-        </div>
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          style={{
-            background: "var(--text)",
-            color: "var(--bg)",
-            border: "none",
-            borderRadius: "var(--radius)",
-            padding: "9px 16px",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {showForm ? "Cancel" : "+ New bug"}
-        </button>
-      </div>
+    <div
+    style={{
+      maxWidth: 1100,
+      margin: "0 auto",
+      padding: "32px",
+      background: "#0F172A",
+      minHeight: "100vh",
+    }}
+  >
+    <Header onNewSession={() => setShowForm((s) => !s)} />
+
 
       {showForm && (
         <form
@@ -140,30 +126,11 @@ export default function Dashboard() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {sessions.map((s) => (
-            <Link
-              key={s.id}
-              to={`/sessions/${s.id}`}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "16px 18px",
-                transition: "border-color 0.15s ease, background 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-            >
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{s.title}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-faint)" }}>
-                  {s.project} · #{s.id}
-                </div>
-              </div>
-              <StatusPill status={s.status} />
-            </Link>
+            <SessionCard
+    key={s.id}
+    session={s}
+/>
+
           ))}
         </div>
       )}

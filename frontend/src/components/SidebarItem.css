@@ -1,0 +1,53 @@
+.sidebar-item{
+
+    display:block;
+
+    background:#171B22;
+
+    border:1px solid #2B3240;
+
+    border-radius:12px;
+
+    padding:14px;
+
+    text-decoration:none;
+
+    margin-bottom:12px;
+
+    transition:.2s;
+
+}
+
+.sidebar-item:hover{
+
+    border-color:#3B82F6;
+
+    transform:translateY(-2px);
+
+}
+
+.sidebar-item-title{
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:600;
+
+}
+
+.sidebar-item-project{
+
+    color:#94A3B8;
+
+    margin-top:6px;
+
+    font-size:13px;
+
+}
+
+.sidebar-item-footer{
+
+    margin-top:12px;
+
+}

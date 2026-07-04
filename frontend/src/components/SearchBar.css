@@ -1,0 +1,27 @@
+.search-bar{
+
+    width:100%;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    border:1px solid #2B3240;
+
+    background:#171B22;
+
+    color:white;
+
+    outline:none;
+
+    margin-bottom:18px;
+
+    box-sizing:border-box;
+
+}
+
+.search-bar:focus{
+
+    border-color:#3B82F6;
+
+}

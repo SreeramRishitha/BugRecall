@@ -1,0 +1,77 @@
+.hyp-card{
+
+    background:#171B22;
+
+    border:1px solid #2B3240;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    margin-bottom:16px;
+
+    transition:.25s;
+
+}
+
+.hyp-card:hover{
+
+    border-color:#3B82F6;
+
+    transform:translateY(-2px);
+
+}
+
+.hyp-title{
+
+    font-size:18px;
+
+    color:white;
+
+    font-weight:600;
+
+}
+
+.hyp-status{
+
+    margin-top:12px;
+
+}
+
+.reason-title{
+
+    color:#60A5FA;
+
+    margin-bottom:6px;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+}
+
+.reason{
+
+    color:#CBD5E1;
+
+    line-height:1.6;
+
+}
+
+.footer{
+
+    color:#10B981;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.divider{
+
+    border-top:1px solid #2B3240;
+
+    margin:18px 0;
+
+}
