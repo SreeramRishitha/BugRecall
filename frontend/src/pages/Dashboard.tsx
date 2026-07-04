@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
 import { api } from "../lib/api";
 import type { BugSession } from "../types";
-import StatusPill from "../components/StatusPill";
+
 import Header from "../components/Header";
 import SessionCard from "../components/SessionCard";
 export default function Dashboard() {
